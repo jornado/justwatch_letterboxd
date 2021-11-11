@@ -1,5 +1,5 @@
 # Just Watch Letterboxd
-### Stream all the films you want to watch
+### Find out where all films you want to watch are streaming
 
 Ever wonder what films you want to watch are already on the streaming platforms
 you subscribe to but too lazy to search for them all? Fear not! If you have a
