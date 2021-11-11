@@ -3,6 +3,10 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from justwatch import JustWatch
+import yaml
+
+
+# See config.yml for configuration options
 
 
 HOST = "https://letterboxd.com"
@@ -14,13 +18,14 @@ SUBSCRIPTION = "flatrate"
 
 
 def load_yaml():
-    pass
+    with open('./config.yml') as f:
+        return yaml.load(f, Loader=yaml.FullLoader)
 
 
 class Service():
     def __init__(self, short_name):
         self.films = set()
-        self.name = SVCS[short_name]
+        self.name = YAML['services'][short_name]
         self.short_name = short_name
 
     def __repr__(self):
@@ -82,7 +87,7 @@ def get_path(path):
 
 
 def get_links_text(page):
-    url = "/{}/watchlist/page/{}".format(LETTERBOXD_USR, page)
+    url = "/{}/watchlist/page/{}".format(YAML['letterboxd_username'], page)
     return get_text(url)
 
 
@@ -99,13 +104,16 @@ def get_links(text):
 
 # Part 1
 def write_links_to_file():
+    print("\n...Getting links from {}'s Letterboxd Watchlist...\n".format(
+        YAML['letterboxd_username']))
     with open(LINKS_FNAME, "w") as fh:
-        for x in range(1, MAX_PAGE):
+        for x in range(1, YAML['max_page']):
             text = get_links_text(x)
             links = get_links(text)
-            for link in links:
+            for idx, link in enumerate(links):
+                print("Page {}: {}".format(x, link))
                 fh.write("{}\n".format(link))
-            print(links)
+            time.sleep(1)
 
 
 def get_film_details(text, link):
@@ -131,16 +139,15 @@ def get_film_details(text, link):
 
 
 def get_films():
+    print("\n\n...Getting film detail pages from Letterboxd...\n")
     films = []
     with open(LINKS_FNAME) as fh:
         links = fh.readlines()
-        idx = 0
-        for link in links:
-            idx += 1
+        for idx, link in enumerate(links):
             print(idx, link.strip())
-            time.sleep(1)
             text = get_path(link.strip())
             films.append(get_film_details(text, link))
+            time.sleep(1)
 
     return films
 
@@ -153,6 +160,7 @@ def write_films_to_file():
 
 
 def get_all_subs():
+    print("\n\n...Getting streaming information from JustWatch...\n")
     updated = []
     just_watch = JustWatch(country='US')
 
@@ -204,7 +212,7 @@ def process_sub(idx, film, results):
 
     film.services = list(services)
     for svc in services:
-        if svc in SVCS:
+        if svc in YAML['services']:
             film.have_svc = True
             return film
 
@@ -222,9 +230,11 @@ def get_all_providers():
 
 # Part 4
 def sort_by_service():
+    print("\n\n...Writing results to {}...\n\n".format(
+        YAML['output_filename']))
     services = {}
     films = []
-    for short_name in SVCS.keys():
+    for short_name in YAML['services'].keys():
         services[short_name] = Service(short_name)
 
     with open(SUBS_FNAME) as fh:
@@ -236,11 +246,10 @@ def sort_by_service():
     for film in films:
         for svc in film.services:
             if svc in services.keys():
-                print(film)
                 services[svc].films.add(film)
 
-    with open(SORTED_FNAME, "w") as fh:
-        for svc in sorted(SVCS.keys()):
+    with open(YAML['output_filename'], "w") as fh:
+        for svc in sorted(YAML['services'].keys()):
             fh.write("\n")
             fh.write("{}\n".format(services[svc].name.upper()))
             svc_films = sorted(
@@ -254,6 +263,7 @@ def sort_by_service():
 # the size of your watchlist (mine is > 700 items and tooks over 10 mins for
 # some of the steps)
 
+YAML = load_yaml()
 write_links_to_file()
 write_films_to_file()
 write_subs_to_file()
