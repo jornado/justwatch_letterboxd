@@ -4,7 +4,7 @@ max_page: 30
 letterboxd_username: jornado  
 # This is the file that will ultimately contain all the films sorted by service!
 output_filename: "sorted_by_service.txt" 
-# Change these to subscriptions you have (you can check providers.json)
+# Change these to subscriptions you have (you can check for other services' abbreviations in providers.json under "short_name").
 services:
   hbm: HBO Max
   hlu: Hulu

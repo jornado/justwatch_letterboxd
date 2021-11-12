@@ -19,7 +19,7 @@ really long time! With my list of >700 films, it took about a half hour to run.
 Be patient!
 
 ## ENJOY
-You films will be sorted by service in sorted_by_service.txt.
+Your list of films will be found sorted by service in `sorted_by_service.txt`.
 
 ## EXAMPLE
-![Output example.](/sample.png "This is what output will look like.")
+![Output example.](/sample.png "This is what the output will look like.")

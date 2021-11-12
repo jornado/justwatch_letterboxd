@@ -95,6 +95,7 @@ def get_links(text):
     links = []
     soup = BeautifulSoup(text, 'html.parser')
     movies = soup.find_all(attrs={"class": "linked-film-poster"})
+
     for movie in movies:
         link = movie.attrs['data-film-slug']
         links.append(link)
@@ -106,14 +107,16 @@ def get_links(text):
 def write_links_to_file():
     print("\n...Getting links from {}'s Letterboxd Watchlist...\n".format(
         YAML['letterboxd_username']))
+
     with open(LINKS_FNAME, "w") as fh:
         for x in range(1, YAML['max_page']):
+            time.sleep(1)
             text = get_links_text(x)
             links = get_links(text)
+
             for idx, link in enumerate(links):
                 print("Page {}: {}".format(x, link))
                 fh.write("{}\n".format(link))
-            time.sleep(1)
 
 
 def get_film_details(text, link):
@@ -121,13 +124,14 @@ def get_film_details(text, link):
     details = soup.find(id="featured-film-header")
     rating_meta = soup.find("meta", attrs={"name": "twitter:data2"})
     rating = ""
+
     if rating_meta and rating_meta.get('content'):
         ratings = rating_meta['content'].split(" out of ")
         rating = ratings[0]
     else:
-        print("! No rating found", rating_meta)
+        print("! No rating found")
 
-    f = Film(
+    return Film(
         title=details.h1.text,
         year=details.small.text,
         director=details.span.text,
@@ -135,15 +139,13 @@ def get_film_details(text, link):
         rating=rating,
     )
 
-    return f
-
 
 def get_films():
     print("\n\n...Getting film detail pages from Letterboxd...\n")
     films = []
+
     with open(LINKS_FNAME) as fh:
-        links = fh.readlines()
-        for idx, link in enumerate(links):
+        for idx, link in enumerate(fh.readlines()):
             print(idx, link.strip())
             text = get_path(link.strip())
             films.append(get_film_details(text, link))
@@ -166,13 +168,20 @@ def get_all_subs():
 
     with open(FILMS_FNAME) as fh:
         films = json.loads(fh.read())
+
         for idx, film_json in enumerate(films):
             film = Film(
-                film_json['title'], film_json['year'], film_json['director'])
+                film_json['title'],
+                film_json['year'],
+                film_json['director'],
+                film_json['link'],
+                film_json['rating'],
+            )
             maybe_updated = process_sub(
                 idx, film, just_watch.search_for_item(
                     query=film.title,
                 ))
+
             if maybe_updated is not None:
                 updated.append(maybe_updated)
             time.sleep(1)
@@ -188,11 +197,11 @@ def write_subs_to_file():
 
 
 def process_sub(idx, film, results):
-    services = set()
     if (len(results) == 0
             or 'items' not in results
             or len(results['items']) == 0):
         return None
+
     item = None
     for i in results['items']:
         if (i['title'].lower() == film.title.lower()
@@ -204,11 +213,13 @@ def process_sub(idx, film, results):
         return None
 
     print(idx, item['title'], item['full_path'])
+
     if 'offers' not in item:
         return None
-    for offer in item['offers']:
-        if offer['monetization_type'] == SUBSCRIPTION:
-            services.add(offer['package_short_name'])
+
+    services = {offer['package_short_name']
+                for offer in item['offers']
+                if offer['monetization_type'] == SUBSCRIPTION}
 
     film.services = list(services)
     for svc in services:
@@ -232,16 +243,13 @@ def get_all_providers():
 def sort_by_service():
     print("\n\n...Writing results to {}...\n\n".format(
         YAML['output_filename']))
-    services = {}
     films = []
-    for short_name in YAML['services'].keys():
-        services[short_name] = Service(short_name)
+    services = {short_name: Service(short_name)
+                for short_name in YAML['services'].keys()}
 
     with open(SUBS_FNAME) as fh:
-        all_films = json.loads(fh.read())
-        for film in all_films:
-            if film["have_svc"]:
-                films.append(Film.from_dict(film))
+        films = [Film.from_dict(film)
+                 for film in json.loads(fh.read()) if "have_svc" in film]
 
     for film in films:
         for svc in film.services:
@@ -252,16 +260,12 @@ def sort_by_service():
         for svc in sorted(YAML['services'].keys()):
             fh.write("\n")
             fh.write("{}\n".format(services[svc].name.upper()))
-            svc_films = sorted(
-                services[svc].films, key=lambda film: film.title)
-            for film in svc_films:
+
+            for film in sorted(
+                    services[svc].films, key=lambda film: film.title):
                 fh.write("{} ({}) - {}\n".format(
                     film.title, film.year, film.director))
 
-
-# I ran each of these separately, as they can take a long time depending on
-# the size of your watchlist (mine is > 700 items and tooks over 10 mins for
-# some of the steps)
 
 YAML = load_yaml()
 write_links_to_file()
