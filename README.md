@@ -4,7 +4,9 @@
 Ever wonder what films you want to watch are already on the streaming platforms
 you subscribe to but too lazy to search for them all? Fear not! If you have a
 Letterboxd Watchlist, you can use this script to figure out what subscription
-streaming platforms those films are on!
+streaming platforms those films are on! Services default to HBO Max, Hulu,
+Netflix, Disney+, Amazon Prime Video, and Criterion Channel, but the list is 
+customizable.
 
 ## INSTALLATION
 `python3 -m pip install -r requirements.txt`
