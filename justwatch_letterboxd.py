@@ -17,6 +17,7 @@ SVCS_FNAME = "providers.json"
 SUBSCRIPTION = "flatrate"
 
 
+# Load configuration from YAML file
 def load_yaml():
     with open('./config.yml') as f:
         return yaml.load(f, Loader=yaml.FullLoader)
@@ -50,6 +51,7 @@ class Film():
     def __repr__(self):
         return self.title
 
+    # Create a Film object from a dictionary
     @classmethod
     def from_dict(cls, args):
         f = Film(
@@ -63,6 +65,7 @@ class Film():
         )
         return f
 
+    # Create dictionary from a Film object
     @classmethod
     def to_dict(cls, f):
         return {
@@ -76,21 +79,20 @@ class Film():
         }
 
 
+# Fetch contents of a URL
 def get_text(path):
     url = "{}{}".format(HOST, path)
     r = requests.get(url)
     return r.text
 
 
-def get_path(path):
-    return get_text(path)
-
-
+# Fetch contents of a Letterboxd Watchlist URL
 def get_links_text(page):
     url = "/{}/watchlist/page/{}".format(YAML['letterboxd_username'], page)
     return get_text(url)
 
 
+# Parse the out the links to the films' Letterboxd pages
 def get_links(text):
     links = []
     soup = BeautifulSoup(text, 'html.parser')
@@ -104,6 +106,8 @@ def get_links(text):
 
 
 # Part 1
+# Fetch all the links of the films from all the Letterboxd Watchlist URLs
+# (Up to YAML['max_page'])
 def write_links_to_file():
     print("\n...Getting links from {}'s Letterboxd Watchlist...\n".format(
         YAML['letterboxd_username']))
@@ -119,6 +123,7 @@ def write_links_to_file():
                 fh.write("{}\n".format(link))
 
 
+# Parse out the film's title, year, director, and rating
 def get_film_details(text, link):
     soup = BeautifulSoup(text, 'html.parser')
     details = soup.find(id="featured-film-header")
@@ -140,6 +145,7 @@ def get_film_details(text, link):
     )
 
 
+# Fetch all the films' Letterboxd URLs
 def get_films():
     print("\n\n...Getting film detail pages from Letterboxd...\n")
     films = []
@@ -147,7 +153,7 @@ def get_films():
     with open(LINKS_FNAME) as fh:
         for idx, link in enumerate(fh.readlines()):
             print(idx, link.strip())
-            text = get_path(link.strip())
+            text = get_text(link.strip())
             films.append(get_film_details(text, link))
             time.sleep(1)
 
@@ -155,12 +161,14 @@ def get_films():
 
 
 # Part 2
+# Write all the films data to file
 def write_films_to_file():
     films = get_films()
     with open(FILMS_FNAME, "w") as fh:
         fh.write(json.dumps(films, default=Film.to_dict))
 
 
+# Fetch all the streaming info about each of the films
 def get_all_subs():
     print("\n\n...Getting streaming information from JustWatch...\n")
     updated = []
@@ -190,12 +198,14 @@ def get_all_subs():
 
 
 # Part 3
+# Write the streaming info for all of the films to file
 def write_subs_to_file():
     films = get_all_subs()
     with open(SUBS_FNAME, "w") as fh:
         fh.write(json.dumps(films, default=Film.to_dict))
 
 
+# Parse out the services this film is streaming on
 def process_sub(idx, film, results):
     if (len(results) == 0
             or 'items' not in results
@@ -233,6 +243,7 @@ def process_sub(idx, film, results):
     return film
 
 
+# Fetch all service provider data
 def get_all_providers():
     just_watch = JustWatch(country='US')
     with open(SVCS_FNAME, "w") as fh:
@@ -240,6 +251,8 @@ def get_all_providers():
 
 
 # Part 4
+# Sort all of our film JSON data by service and output it to file in the
+# format: Film Title (Year) - Director
 def sort_by_service():
     print("\n\n...Writing results to {}...\n\n".format(
         YAML['output_filename']))
