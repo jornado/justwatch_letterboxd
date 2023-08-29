@@ -1,9 +1,11 @@
 # Change this to # of pages of your Letterboxd Watchlist at letterboxd.com/[you]/watchlist
 max_page: 30
 # Change this to your Letterboxd username
-letterboxd_username: jornado  
+letterboxd_username: jornado
 # This is the file that will ultimately contain all the films sorted by service!
-output_filename: "sorted_by_service.txt" 
+output_filename: 'sorted_by_service.txt'
+# Change this to your country
+country: US
 # Change these to subscriptions you have (you can check for other services' abbreviations in providers.json under "short_name").
 services:
   hbm: HBO Max
