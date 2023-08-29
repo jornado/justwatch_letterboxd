@@ -172,7 +172,7 @@ def write_films_to_file():
 def get_all_subs():
     print("\n\n...Getting streaming information from JustWatch...\n")
     updated = []
-    just_watch = JustWatch(country='US')
+    just_watch = JustWatch(country=YAML['country'])
 
     with open(FILMS_FNAME) as fh:
         films = json.loads(fh.read())
@@ -245,7 +245,7 @@ def process_sub(idx, film, results):
 
 # Fetch all service provider data
 def get_all_providers():
-    just_watch = JustWatch(country='US')
+    just_watch = JustWatch(country=YAML['country'])
     with open(SVCS_FNAME, "w") as fh:
         fh.write(json.dumps(just_watch.get_providers()))
 
